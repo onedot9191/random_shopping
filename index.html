@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>용돈으로 특별한 선물 찾기</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 사용자 정의 스타일 */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .priority-selected {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+        }
+        .alert-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 1000; /* Ensure it's above other elements */
+            display: none;
+            min-width: 250px; /* Min width for better readability */
+            text-align: center;
+        }
+        .alert-success {
+            background-color: #10b981; /* emerald-500 */
+            color: white;
+        }
+        .alert-error {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
+        .alert-info {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        textarea {
+            resize: vertical; /* Allow vertical resize only */
+        }
+        .summary-item {
+            margin-bottom: 0.5rem; /* 8px */
+        }
+        .spin-result {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            background-color: #e0e7ff; /* indigo-100 */
+            border-radius: 0.25rem;
+            font-weight: 500;
+        }
+        /* 스피너 애니메이션을 위한 스타일 */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #3b82f6; /* blue-500 */
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .money-animation span {
+            display: inline-block;
+            animation: quickChange 0.1s linear infinite;
+        }
+        @keyframes quickChange {
+            0%   { opacity: 0.8; transform: translateY(-2px); }
+            25%  { opacity: 1; transform: translateY(0px); }
+            50%  { opacity: 0.8; transform: translateY(2px); }
+            75%  { opacity: 1; transform: translateY(0px); }
+            100% { opacity: 0.8; transform: translateY(-2px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- 알림 메시지 영역 -->
+    <div id="alertMessage" class="alert-message"></div>
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-indigo-600">🎁 용돈으로 특별한 선물 찾기 🎁</h1>
+        </header>
+
+        <!-- Step 1 & 2: Setup Phase -->
+        <div id="setupPhase" class="bg-white p-6 rounded-lg shadow mb-8">
+            <!-- Step 1: What do you want to buy? -->
+            <div id="step1DesiredItemSection" class="mb-6">
+                <label for="desiredItemInput" class="block text-xl font-semibold mb-3 text-indigo-500">1. 무엇을 가장 사고 싶나요?</label>
+                <input type="text" id="desiredItemInput" placeholder="사고 싶은 것을 입력하세요..." class="w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                <button id="confirmDesiredItemButton" class="mt-4 w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors" disabled>다음으로</button>
+            </div>
+
+            <!-- Step 2: Get Pocket Money -->
+            <div id="step2PocketMoneySection" class="mb-6 hidden">
+                 <h2 class="text-xl font-semibold mb-3 text-indigo-500">2. 오늘의 용돈 확인하기! (총 3번 뽑기)</h2>
+                <div class="p-4 bg-indigo-50 rounded-lg mb-4">
+                    <div class="flex flex-col sm:flex-row items-center justify-between mb-2 gap-2">
+                        <span class="text-lg">나의 용돈:</span>
+                        <span id="pocketMoneyDisplay" class="text-2xl font-bold text-indigo-700">0원</span>
+                    </div>
+                    <div id="spinResultsContainer" class="text-sm text-gray-600 min-h-[24px]">
+                        <!-- 각 뽑기 결과가 여기에 표시됩니다. -->
+                    </div>
+                     <div id="currentSpinAnimationContainer" class="text-center my-2 min-h-[30px]">
+                        <!-- 현재 뽑기 애니메이션 영역 -->
+                    </div>
+                </div>
+                <button id="getPocketMoneyButton" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition-colors mb-2 sm:mb-0 sm:mr-2">
+                    💸 용돈 뽑기! (남은 횟수: <span id="spinsLeftCount">3</span>)
+                </button>
+                <button id="proceedToShoppingButton" class="w-full sm:w-auto bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition-colors hidden">🛍️ 선물 고르러 가기</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Shopping Phase (Initially Hidden) -->
+        <div id="shoppingPhase" class="hidden">
+            <div class="mb-8 p-4 bg-green-50 rounded-lg shadow text-center">
+                <p class="text-lg mb-1">내가 갖고 싶은 것: <strong id="displayDesiredItem" class="text-green-700"></strong></p>
+                <p class="text-lg">오늘의 용돈: <strong id="displayShoppingPhasePocketMoney" class="text-green-700"></strong></p>
+            </div>
+
+            <!-- 기준 선택 -->
+            <div class="mb-8 p-4 bg-white rounded-lg shadow">
+                <h2 class="text-xl font-semibold mb-3 text-indigo-500">우선 순위 선택:</h2>
+                <div id="prioritySelection" class="flex flex-wrap gap-2 sm:gap-4">
+                    <button data-priority="balanced" class="priority-btn flex-grow sm:flex-none px-4 py-2 border border-gray-300 rounded-md hover:bg-indigo-100 transition-colors priority-selected">균형</button>
+                    <button data-priority="design" class="priority-btn flex-grow sm:flex-none px-4 py-2 border border-gray-300 rounded-md hover:bg-indigo-100 transition-colors">디자인 중시</button>
+                    <button data-priority="practicality" class="priority-btn flex-grow sm:flex-none px-4 py-2 border border-gray-300 rounded-md hover:bg-indigo-100 transition-colors">실용성 중시</button>
+                </div>
+            </div>
+
+            <div class="lg:flex lg:gap-8">
+                <!-- 상품 목록 -->
+                <div class="lg:w-2/3">
+                    <h2 class="text-2xl font-semibold mb-6 text-indigo-500">선물 목록 🛍️</h2>
+                    <div id="giftList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- 상품 카드가 여기에 동적으로 추가됩니다. (이미지 없음) -->
+                    </div>
+                </div>
+
+                <!-- 장바구니 -->
+                <div class="lg:w-1/3 mt-8 lg:mt-0">
+                    <div class="bg-white p-6 rounded-lg shadow sticky top-8">
+                        <h2 class="text-2xl font-semibold mb-6 text-indigo-500">장바구니 🛒</h2>
+                        <div id="cartItems" class="mb-6 min-h-[100px] max-h-[300px] overflow-y-auto pr-2">
+                            <p id="emptyCartMessage" class="text-gray-500">장바구니가 비어있습니다.</p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-lg font-semibold">총 금액:</span>
+                                <span id="cartTotal" class="text-xl font-bold text-indigo-600">0원</span>
+                            </div>
+                            <button id="checkoutButton" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-md transition-colors disabled:opacity-50" disabled>
+                                쇼핑 결과 보기
+                            </button>
+                             <button id="resetAppButtonFromShopping" class="mt-4 w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition-colors">처음으로 돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Reason Phase (Initially Hidden) -->
+        <div id="reasonPhase" class="hidden bg-white p-6 rounded-lg shadow mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-indigo-500">📝 쇼핑 후기 작성 📝</h2>
+            <div id="purchaseResultSummary" class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700">
+                <!-- 구매 결과 요약이 여기에 표시됩니다. -->
+            </div>
+            <div class="mb-4">
+                <label for="reasonInput" class="block text-lg font-medium mb-2 text-gray-700">원하는 물건을 모두 구매했나요? 아니라면 그 이유는 무엇인가요?</label>
+                <textarea id="reasonInput" rows="4" class="w-full p-3 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" placeholder="자유롭게 작성해주세요..."></textarea>
+            </div>
+            <button id="submitReasonButton" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md transition-colors">최종 요약 보기</button>
+        </div>
+
+        <!-- Step 5: Final Summary Phase (Initially Hidden) -->
+        <div id="finalSummaryPhase" class="hidden bg-white p-6 rounded-lg shadow mb-8">
+            <h2 class="text-2xl font-semibold mb-6 text-center text-indigo-500">🎉 오늘의 쇼핑 최종 요약 🎉</h2>
+            <div class="space-y-3 text-gray-700">
+                <p class="summary-item"><strong>처음에 갖고 싶었던 것:</strong> <span id="finalDesiredItem" class="font-medium text-indigo-600"></span></p>
+                <p class="summary-item"><strong>뽑은 용돈:</strong> <span id="finalInitialPocketMoney" class="font-medium text-indigo-600"></span></p>
+                <p class="summary-item"><strong>선택한 상품 총액:</strong> <span id="finalTotalCost" class="font-medium text-indigo-600"></span></p>
+                <p class="summary-item"><strong>남은 용돈 (또는 부족 금액):</strong> <span id="finalRemainingPocketMoney" class="font-medium"></span></p> <!-- 색상 동적 변경 -->
+                <div id="finalUserReasonContainer" class="summary-item">
+                    <p><strong>나의 쇼핑 후기:</strong></p>
+                    <p id="finalUserReason" class="mt-1 p-3 bg-gray-50 border border-gray-200 rounded-md whitespace-pre-wrap"></p>
+                </div>
+            </div>
+            <button id="restartAppButton" class="mt-8 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition-colors">다시 하기</button>
+        </div>
+
+
+         <footer class="text-center mt-12 py-6 border-t border-gray-300">
+            <p class="text-gray-600">&copy; 2024 용돈으로 특별한 선물 찾기. 모든 권리 보유.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- 데이터 정의 ---
+        const giftsData = [
+            { id: 1, name: "스티커 세트", price: 3000, design: 5, practicality: 2 },
+            { id: 2, name: "캐릭터 양말", price: 5000, design: 4, practicality: 4 },
+            { id: 3, name: "미니멀 팔찌", price: 7000, design: 4, practicality: 3 },
+            { id: 4, name: "귀여운 피규어", price: 8000, design: 5, practicality: 1 },
+            { id: 5, name: "고급 샤프펜슬", price: 9000, design: 3, practicality: 5 },
+            { id: 6, name: "미니 텀블러", price: 10000, design: 3, practicality: 5 },
+            { id: 7, name: "향기로운 핸드크림", price: 6000, design: 4, practicality: 4 },
+            { id: 8, name: "커플 키링", price: 8500, design: 5, practicality: 3 },
+            { id: 9, name: "다육이 화분", price: 7500, design: 4, practicality: 2 },
+            { id: 10, name: "디자인 책갈피", price: 4000, design: 5, practicality: 3 }
+        ];
+
+        let cart = [];
+        let currentSortCriterion = 'balanced';
+        let desiredItemText = '';
+        let initialPocketMoney = 0; 
+        let currentPocketMoney = 0; 
+        let finalUserReasonText = ''; 
+        
+        let spinCount = 0; 
+        const spinsNeeded = 3; 
+        let accumulatedSpinMoney = 0; 
+        const singleSpinAmounts = [1000, 2000, 3000, 4000, 5000];
+
+
+        // --- DOM 요소 가져오기 ---
+        const setupPhaseDiv = document.getElementById('setupPhase');
+        const shoppingPhaseDiv = document.getElementById('shoppingPhase');
+        const reasonPhaseDiv = document.getElementById('reasonPhase');
+        const finalSummaryPhaseDiv = document.getElementById('finalSummaryPhase'); 
+
+
+        const step1DesiredItemSection = document.getElementById('step1DesiredItemSection');
+        const desiredItemInput = document.getElementById('desiredItemInput');
+        const confirmDesiredItemButton = document.getElementById('confirmDesiredItemButton');
+        
+        const step2PocketMoneySection = document.getElementById('step2PocketMoneySection');
+        const pocketMoneyDisplay = document.getElementById('pocketMoneyDisplay'); 
+        const getPocketMoneyButton = document.getElementById('getPocketMoneyButton');
+        const proceedToShoppingButton = document.getElementById('proceedToShoppingButton');
+        // const spinsLeftCountElement = document.getElementById('spinsLeftCount'); // No longer needed as global const
+        const spinResultsContainerElement = document.getElementById('spinResultsContainer'); 
+        const currentSpinAnimationContainer = document.getElementById('currentSpinAnimationContainer');
+
+
+        const displayDesiredItem = document.getElementById('displayDesiredItem');
+        const displayShoppingPhasePocketMoney = document.getElementById('displayShoppingPhasePocketMoney'); 
+        
+        const giftListElement = document.getElementById('giftList');
+        const cartItemsElement = document.getElementById('cartItems');
+        const cartTotalElement = document.getElementById('cartTotal');
+        const checkoutButton = document.getElementById('checkoutButton');
+        const emptyCartMessage = document.getElementById('emptyCartMessage');
+        const prioritySelectionDiv = document.getElementById('prioritySelection');
+        const alertMessageElement = document.getElementById('alertMessage');
+        const resetAppButtonFromShopping = document.getElementById('resetAppButtonFromShopping');
+
+        const purchaseResultSummaryElement = document.getElementById('purchaseResultSummary');
+        const reasonInput = document.getElementById('reasonInput');
+        const submitReasonButton = document.getElementById('submitReasonButton');
+
+        const finalDesiredItemElem = document.getElementById('finalDesiredItem');
+        const finalInitialPocketMoneyElem = document.getElementById('finalInitialPocketMoney');
+        const finalTotalCostElem = document.getElementById('finalTotalCost');
+        const finalRemainingPocketMoneyElem = document.getElementById('finalRemainingPocketMoney');
+        const finalUserReasonContainerElem = document.getElementById('finalUserReasonContainer');
+        const finalUserReasonElem = document.getElementById('finalUserReason');
+        const restartAppButton = document.getElementById('restartAppButton');
+
+
+        // --- 알림 메시지 함수 ---
+        function showAlert(message, type = 'success', duration = 3000) {
+            alertMessageElement.textContent = message;
+            alertMessageElement.className = `alert-message alert-${type}`; 
+            alertMessageElement.style.display = 'block';
+            setTimeout(() => {
+                alertMessageElement.style.display = 'none';
+            }, duration);
+        }
+
+        // --- UI 업데이트 함수 ---
+        function updatePocketMoneyDisplayElements() {
+            const formattedPocketMoney = `${initialPocketMoney.toLocaleString()}원`;
+            pocketMoneyDisplay.textContent = formattedPocketMoney; 
+            displayShoppingPhasePocketMoney.textContent = formattedPocketMoney; 
+        }
+        
+        // --- 상품 렌더링 함수 (이미지 제거) ---
+        function renderGifts() {
+            let sortedGifts = [...giftsData]; 
+            if (currentSortCriterion === 'design') {
+                sortedGifts.sort((a, b) => b.design - a.design || a.price - b.price);
+            } else if (currentSortCriterion === 'practicality') {
+                sortedGifts.sort((a, b) => b.practicality - a.practicality || a.price - b.price);
+            } else { 
+                sortedGifts.sort((a, b) => (b.design + b.practicality) - (a.design + a.practicality) || a.price - b.price);
+            }
+
+            giftListElement.innerHTML = ''; 
+            sortedGifts.forEach(gift => {
+                const card = `
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
+                        <div class="p-4 flex flex-col flex-grow">
+                            <h3 class="text-lg font-semibold mb-2 text-gray-800">${gift.name}</h3>
+                            <p class="text-indigo-600 font-bold text-xl mb-2">${gift.price.toLocaleString()}원</p>
+                            <div class="text-sm text-gray-600 mb-1">
+                                <span>디자인:</span>
+                                <span class="font-medium">${'⭐'.repeat(gift.design)}${'☆'.repeat(5-gift.design)} (${gift.design}/5)</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mb-3">
+                                <span>실용성:</span>
+                                <span class="font-medium">${'🌟'.repeat(gift.practicality)}${'☆'.repeat(5-gift.practicality)} (${gift.practicality}/5)</span>
+                            </div>
+                            <button data-id="${gift.id}" class="add-to-cart-btn mt-auto w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 rounded-md transition-colors text-sm">
+                                장바구니에 추가
+                            </button>
+                        </div>
+                    </div>
+                `;
+                giftListElement.insertAdjacentHTML('beforeend', card);
+            });
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', () => addToCart(parseInt(button.dataset.id)));
+            });
+        }
+
+        // --- 장바구니 렌더링 함수 ---
+        function renderCart() {
+            cartItemsElement.innerHTML = '';
+            if (cart.length === 0) {
+                emptyCartMessage.style.display = 'block';
+                checkoutButton.disabled = true;
+            } else {
+                emptyCartMessage.style.display = 'none';
+                cart.forEach(item => {
+                    const cartItemHTML = `
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                            <div>
+                                <p class="font-medium text-gray-700">${item.name} (x${item.quantity})</p>
+                                <p class="text-sm text-gray-500">${(item.price * item.quantity).toLocaleString()}원</p>
+                            </div>
+                            <button data-id="${item.id}" class="remove-from-cart-btn text-red-500 hover:text-red-700 font-semibold text-sm">삭제</button>
+                        </div>
+                    `;
+                    cartItemsElement.insertAdjacentHTML('beforeend', cartItemHTML);
+                });
+                checkoutButton.disabled = false;
+            }
+            document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                button.addEventListener('click', () => removeFromCart(parseInt(button.dataset.id)));
+            });
+            updateCartTotal();
+        }
+
+        // --- 장바구니 총액 업데이트 함수 ---
+        function updateCartTotal() {
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            cartTotalElement.textContent = `${total.toLocaleString()}원`;
+        }
+
+        // --- 장바구니에 상품 추가 함수 ---
+        function addToCart(giftId) {
+            const gift = giftsData.find(g => g.id === giftId);
+            if (!gift) return;
+
+            const existingItem = cart.find(item => item.id === giftId);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({ ...gift, quantity: 1 });
+            }
+            showAlert(`${gift.name} 상품을 장바구니에 추가했습니다.`, 'success');
+            renderCart();
+        }
+        
+        // --- 장바구니에서 상품 제거 함수 ---
+        function removeFromCart(giftId) {
+            const itemIndex = cart.findIndex(item => item.id === giftId);
+            if (itemIndex > -1) {
+                const item = cart[itemIndex];
+                showAlert(`${item.name} 상품을 장바구니에서 삭제했습니다.`, 'success'); 
+                if (item.quantity > 1) {
+                    item.quantity--;
+                } else {
+                    cart.splice(itemIndex, 1);
+                }
+                renderCart();
+            }
+        }
+        
+        // --- 구매 시도 및 이유 작성 페이지로 이동 함수 ---
+        function proceedToReasonPhase() {
+            if (cart.length === 0) {
+                showAlert("장바구니가 비어있습니다. 상품을 추가해주세요.", 'error');
+                return; 
+            }
+            const totalCost = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            let summaryHTML = '';
+
+            if (totalCost > initialPocketMoney) {
+                showAlert(`예산 부족! ${initialPocketMoney.toLocaleString()}원의 용돈으로는 ${totalCost.toLocaleString()}원 어치의 상품을 구매할 수 없어요. 😥 장바구니를 수정해주세요.`, 'error', 5000);
+                return; 
+            } else {
+                currentPocketMoney = initialPocketMoney - totalCost; 
+                summaryHTML = `
+                    <p><strong>구매 결과:</strong> 성공! 🎉</p>
+                    <p>총 ${totalCost.toLocaleString()}원 어치의 상품을 구매하셨습니다.</p>
+                    <p>구매 후 남은 용돈은 ${currentPocketMoney.toLocaleString()}원 입니다.</p>
+                `;
+                 showAlert("구매 완료! 쇼핑 후기를 작성해주세요.", "success", 4000);
+
+                purchaseResultSummaryElement.innerHTML = summaryHTML;
+            
+                shoppingPhaseDiv.style.display = 'none';
+                reasonPhaseDiv.style.display = 'block';
+                reasonInput.value = ''; 
+                reasonInput.focus();
+            }
+        }
+
+        // --- 최종 요약 페이지 표시 함수 ---
+        function showFinalSummary() {
+            finalUserReasonText = reasonInput.value.trim();
+
+            finalDesiredItemElem.textContent = desiredItemText || "입력하지 않음";
+            finalInitialPocketMoneyElem.textContent = `${initialPocketMoney.toLocaleString()}원`;
+            
+            const totalCartCost = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            finalTotalCostElem.textContent = `${totalCartCost.toLocaleString()}원`;
+
+            if (totalCartCost <= initialPocketMoney) { 
+                 finalRemainingPocketMoneyElem.textContent = `${currentPocketMoney.toLocaleString()}원 남음`;
+                 finalRemainingPocketMoneyElem.className = "font-medium text-green-600";
+            } else { 
+                const shortage = totalCartCost - initialPocketMoney;
+                finalRemainingPocketMoneyElem.textContent = `${shortage.toLocaleString()}원 부족`;
+                finalRemainingPocketMoneyElem.className = "font-medium text-red-600";
+            }
+
+            if (finalUserReasonText) {
+                finalUserReasonElem.textContent = finalUserReasonText;
+                finalUserReasonContainerElem.style.display = 'block';
+            } else {
+                finalUserReasonElem.textContent = "입력하지 않음";
+            }
+            
+            reasonPhaseDiv.style.display = 'none';
+            finalSummaryPhaseDiv.style.display = 'block';
+            showAlert("오늘의 쇼핑 활동이 모두 기록되었습니다!", "info", 4000);
+            window.scrollTo(0, 0);
+        }
+
+
+        // --- 앱 초기화 / 리셋 함수 ---
+        function resetApplication() {
+            cart = [];
+            currentSortCriterion = 'balanced';
+            desiredItemText = '';
+            initialPocketMoney = 0;
+            currentPocketMoney = 0;
+            finalUserReasonText = '';
+            spinCount = 0;
+            accumulatedSpinMoney = 0;
+
+            desiredItemInput.value = '';
+            confirmDesiredItemButton.disabled = true;
+            
+            pocketMoneyDisplay.textContent = "0원"; 
+            displayShoppingPhasePocketMoney.textContent = "0원";
+            // spinsLeftCountElement was removed, direct update to button's innerHTML
+            spinResultsContainerElement.innerHTML = ''; 
+            currentSpinAnimationContainer.innerHTML = ''; 
+
+            step1DesiredItemSection.style.display = 'block';
+            step2PocketMoneySection.style.display = 'none';
+            getPocketMoneyButton.innerHTML = `💸 용돈 뽑기! (남은 횟수: <span id="spinsLeftCount">${spinsNeeded}</span>)`; 
+            getPocketMoneyButton.disabled = false; 
+            getPocketMoneyButton.style.display = 'inline-block';
+            proceedToShoppingButton.style.display = 'none'; 
+
+            setupPhaseDiv.style.display = 'block';
+            shoppingPhaseDiv.style.display = 'none'; 
+            reasonPhaseDiv.style.display = 'none'; 
+            finalSummaryPhaseDiv.style.display = 'none'; 
+            reasonInput.value = '';
+
+            prioritySelectionDiv.querySelectorAll('.priority-btn').forEach(btn => {
+                 btn.classList.remove('priority-selected');
+            });
+            const balancedButton = prioritySelectionDiv.querySelector('.priority-btn[data-priority="balanced"]');
+            if (balancedButton) {
+                balancedButton.classList.add('priority-selected');
+            }
+            // showAlert("모든 내용이 초기화되었습니다. 처음부터 다시 시작하세요!", "info"); // DOMContentLoaded에서 호출 시 메시지 안 뜨게
+            window.scrollTo(0, 0); 
+        }
+
+        // --- 용돈 뽑기 애니메이션 함수 ---
+        function runSpinAnimation(callback) {
+            getPocketMoneyButton.disabled = true;
+            // Update button text to show "돌리는 중..." and spinner
+            // The actual span with id "spinsLeftCount" is part of this innerHTML, so it gets replaced
+            getPocketMoneyButton.innerHTML = `돌리는 중... <div class="spinner inline-block"></div>`;
+            currentSpinAnimationContainer.innerHTML = `<span class="text-2xl font-bold text-indigo-500 money-animation"><span>${Math.floor(Math.random()*5000)}</span>원</span>`;
+            
+            let animationInterval = setInterval(() => {
+                 currentSpinAnimationContainer.innerHTML = `<span class="text-2xl font-bold text-indigo-500 money-animation"><span>${Math.floor(Math.random()*5000)}</span>원</span>`;
+            }, 100);
+
+            setTimeout(() => {
+                clearInterval(animationInterval);
+                currentSpinAnimationContainer.innerHTML = ''; 
+                // Button text will be restored/updated in the callback or after it,
+                // ensuring the 'spinsLeftCount' span is correctly updated.
+                callback(); 
+            }, 1000); 
+        }
+
+
+        // --- 이벤트 리스너 설정 ---
+        desiredItemInput.addEventListener('input', () => {
+            confirmDesiredItemButton.disabled = desiredItemInput.value.trim() === '';
+        });
+
+        confirmDesiredItemButton.addEventListener('click', () => {
+            desiredItemText = desiredItemInput.value.trim();
+            if (desiredItemText === "") { 
+                showAlert("무엇을 사고 싶은지 입력해주세요!", "error");
+                return;
+            }
+            displayDesiredItem.textContent = desiredItemText || "특별한 것"; 
+            
+            step1DesiredItemSection.style.display = 'none';
+            step2PocketMoneySection.style.display = 'block';
+            
+            spinResultsContainerElement.innerHTML = ''; 
+            currentSpinAnimationContainer.innerHTML = '';
+            accumulatedSpinMoney = 0; 
+            spinCount = 0; 
+            pocketMoneyDisplay.textContent = "0원"; 
+            // Set initial button text with span for spinsLeftCount
+            getPocketMoneyButton.innerHTML = `💸 용돈 뽑기! (남은 횟수: <span id="spinsLeftCount">${spinsNeeded}</span>)`;
+            getPocketMoneyButton.disabled = false; 
+            getPocketMoneyButton.style.display = 'inline-block';
+            proceedToShoppingButton.style.display = 'none'; 
+            showAlert("좋아요! 이제 용돈을 확인해볼까요?", "success");
+        });
+
+        getPocketMoneyButton.addEventListener('click', () => {
+            if (spinCount < spinsNeeded) {
+                runSpinAnimation(() => {
+                    spinCount++; 
+                    const currentSpinAmount = singleSpinAmounts[Math.floor(Math.random() * singleSpinAmounts.length)];
+                    accumulatedSpinMoney += currentSpinAmount;
+                    
+                    const spinResultHTML = `<span class="spin-result">${spinCount}번째: ${currentSpinAmount.toLocaleString()}원</span>`;
+                    spinResultsContainerElement.insertAdjacentHTML('beforeend', spinResultHTML);
+                    
+                    pocketMoneyDisplay.textContent = `${accumulatedSpinMoney.toLocaleString()}원 (누적)`;
+                    
+                    const remainingSpins = spinsNeeded - spinCount;
+                    // Restore button text and update spinsLeftCount
+                    getPocketMoneyButton.innerHTML = `💸 용돈 뽑기! (남은 횟수: <span id="spinsLeftCount">${remainingSpins}</span>)`;
+
+
+                    if (spinCount === spinsNeeded) {
+                        initialPocketMoney = accumulatedSpinMoney;
+                        currentPocketMoney = initialPocketMoney; 
+                        updatePocketMoneyDisplayElements(); 
+                        
+                        getPocketMoneyButton.disabled = true; 
+                        proceedToShoppingButton.style.display = 'inline-block';
+                        showAlert(`총 ${spinsNeeded}번의 뽑기 완료! 오늘의 총 용돈은 ${initialPocketMoney.toLocaleString()}원 입니다!`, 'success', 4000);
+                    } else {
+                         showAlert(`${spinCount}번째 뽑기: ${currentSpinAmount.toLocaleString()}원!`, 'info');
+                         getPocketMoneyButton.disabled = false; 
+                    }
+                });
+            }
+        });
+
+        proceedToShoppingButton.addEventListener('click', () => {
+            if (initialPocketMoney <= 0 && desiredItemText === '') { 
+                 showAlert("먼저 사고 싶은 것을 적고 용돈을 받아주세요!", "error");
+                 resetApplication(); 
+                 return;
+            }
+             if (spinCount < spinsNeeded) { 
+                showAlert(`용돈 뽑기를 ${spinsNeeded - spinCount}번 더 진행해주세요!`, "error");
+                return;
+            }
+            setupPhaseDiv.style.display = 'none';
+            shoppingPhaseDiv.style.display = 'block';
+            reasonPhaseDiv.style.display = 'none'; 
+            finalSummaryPhaseDiv.style.display = 'none';
+            renderGifts();
+            renderCart();
+        });
+        
+        prioritySelectionDiv.addEventListener('click', (event) => {
+            if (event.target.classList.contains('priority-btn')) {
+                currentSortCriterion = event.target.dataset.priority;
+                prioritySelectionDiv.querySelectorAll('.priority-btn').forEach(btn => {
+                    btn.classList.remove('priority-selected');
+                });
+                event.target.classList.add('priority-selected');
+                renderGifts();
+            }
+        });
+
+        checkoutButton.addEventListener('click', proceedToReasonPhase);
+        resetAppButtonFromShopping.addEventListener('click', resetApplication);
+
+        submitReasonButton.addEventListener('click', showFinalSummary); 
+        restartAppButton.addEventListener('click', resetApplication); 
+
+
+        // --- 초기화 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            resetApplication(); 
+             // Initial alert removed from resetApplication for DOMContentLoaded
+            showAlert("환영합니다! 사고 싶은 것을 적고 용돈을 뽑아보세요.", "info");
+        });
+    </script>
+</body>
+</html>
