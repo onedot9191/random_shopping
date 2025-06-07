@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>용돈으로 특별한 선물 찾기</title>
+    <title>랜덤 용돈으로 물건 사기</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -102,7 +102,7 @@
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-indigo-600">🎁 용돈으로 특별한 선물 찾기 🎁</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-indigo-600">🎁 랜덤 용돈으로 물건 사기 🎁</h1>
         </header>
 
         <!-- Step 1 & 2: Setup Phase -->
@@ -215,7 +215,7 @@
 
 
          <footer class="text-center mt-12 py-6 border-t border-gray-300">
-            <p class="text-gray-600">&copy; 2024 용돈으로 특별한 선물 찾기. 모든 권리 보유.</p>
+            <p class="text-gray-600">&copy; 2024 랜덤 용돈으로 물건 사기. 모든 권리 보유.</p>
         </footer>
     </div>
 
@@ -262,7 +262,6 @@
         const pocketMoneyDisplay = document.getElementById('pocketMoneyDisplay'); 
         const getPocketMoneyButton = document.getElementById('getPocketMoneyButton');
         const proceedToShoppingButton = document.getElementById('proceedToShoppingButton');
-        // const spinsLeftCountElement = document.getElementById('spinsLeftCount'); // No longer needed as global const
         const spinResultsContainerElement = document.getElementById('spinResultsContainer'); 
         const currentSpinAnimationContainer = document.getElementById('currentSpinAnimationContainer');
 
@@ -491,7 +490,6 @@
             
             pocketMoneyDisplay.textContent = "0원"; 
             displayShoppingPhasePocketMoney.textContent = "0원";
-            // spinsLeftCountElement was removed, direct update to button's innerHTML
             spinResultsContainerElement.innerHTML = ''; 
             currentSpinAnimationContainer.innerHTML = ''; 
 
@@ -522,8 +520,6 @@
         // --- 용돈 뽑기 애니메이션 함수 ---
         function runSpinAnimation(callback) {
             getPocketMoneyButton.disabled = true;
-            // Update button text to show "돌리는 중..." and spinner
-            // The actual span with id "spinsLeftCount" is part of this innerHTML, so it gets replaced
             getPocketMoneyButton.innerHTML = `돌리는 중... <div class="spinner inline-block"></div>`;
             currentSpinAnimationContainer.innerHTML = `<span class="text-2xl font-bold text-indigo-500 money-animation"><span>${Math.floor(Math.random()*5000)}</span>원</span>`;
             
@@ -534,8 +530,6 @@
             setTimeout(() => {
                 clearInterval(animationInterval);
                 currentSpinAnimationContainer.innerHTML = ''; 
-                // Button text will be restored/updated in the callback or after it,
-                // ensuring the 'spinsLeftCount' span is correctly updated.
                 callback(); 
             }, 1000); 
         }
@@ -562,7 +556,6 @@
             accumulatedSpinMoney = 0; 
             spinCount = 0; 
             pocketMoneyDisplay.textContent = "0원"; 
-            // Set initial button text with span for spinsLeftCount
             getPocketMoneyButton.innerHTML = `💸 용돈 뽑기! (남은 횟수: <span id="spinsLeftCount">${spinsNeeded}</span>)`;
             getPocketMoneyButton.disabled = false; 
             getPocketMoneyButton.style.display = 'inline-block';
@@ -583,9 +576,11 @@
                     pocketMoneyDisplay.textContent = `${accumulatedSpinMoney.toLocaleString()}원 (누적)`;
                     
                     const remainingSpins = spinsNeeded - spinCount;
-                    // Restore button text and update spinsLeftCount
+                    const spinsLeftCountSpan = document.getElementById('spinsLeftCount');
+                    if(spinsLeftCountSpan) {
+                       spinsLeftCountSpan.textContent = remainingSpins;
+                    }
                     getPocketMoneyButton.innerHTML = `💸 용돈 뽑기! (남은 횟수: <span id="spinsLeftCount">${remainingSpins}</span>)`;
-
 
                     if (spinCount === spinsNeeded) {
                         initialPocketMoney = accumulatedSpinMoney;
@@ -642,8 +637,8 @@
         // --- 초기화 ---
         document.addEventListener('DOMContentLoaded', () => {
             resetApplication(); 
-             // Initial alert removed from resetApplication for DOMContentLoaded
-            showAlert("환영합니다! 사고 싶은 것을 적고 용돈을 뽑아보세요.", "info");
+             // DOMContentLoaded에서만 특별히 초기 메시지 표시
+            showAlert("환영합니다! 사고 싶은 것을 적고 용돈을 뽑아보세요.", "info", 4000);
         });
     </script>
 </body>
