@@ -132,7 +132,7 @@
                 <button id="getPocketMoneyButton" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition-colors mb-2 sm:mb-0 sm:mr-2">
                     💸 용돈 뽑기! (남은 횟수: <span id="spinsLeftCount">3</span>)
                 </button>
-                <button id="proceedToShoppingButton" class="w-full sm:w-auto bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition-colors hidden">🛍️ 선물 고르러 가기</button>
+                <button id="proceedToShoppingButton" class="w-full sm:w-auto bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-md transition-colors hidden">🛍️ 물건 고르러 가기</button>
             </div>
         </div>
 
@@ -154,11 +154,11 @@
             </div>
 
             <div class="lg:flex lg:gap-8">
-                <!-- 상품 목록 -->
+                <!-- 물건 목록 -->
                 <div class="lg:w-2/3">
-                    <h2 class="text-2xl font-semibold mb-6 text-indigo-500">선물 목록 🛍️</h2>
-                    <div id="giftList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                        <!-- 상품 카드가 여기에 동적으로 추가됩니다. (이미지 없음) -->
+                    <h2 class="text-2xl font-semibold mb-6 text-indigo-500">물건 목록 🛍️</h2>
+                    <div id="itemList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- 물건 카드가 여기에 동적으로 추가됩니다. -->
                     </div>
                 </div>
 
@@ -221,7 +221,7 @@
 
     <script>
         // --- 데이터 정의 ---
-        const giftsData = [
+        const itemsData = [
             { id: 1, name: "스티커 세트", price: 3000, design: 5, practicality: 2 },
             { id: 2, name: "캐릭터 양말", price: 5000, design: 4, practicality: 4 },
             { id: 3, name: "미니멀 팔찌", price: 7000, design: 4, practicality: 3 },
@@ -269,7 +269,7 @@
         const displayDesiredItem = document.getElementById('displayDesiredItem');
         const displayShoppingPhasePocketMoney = document.getElementById('displayShoppingPhasePocketMoney'); 
         
-        const giftListElement = document.getElementById('giftList');
+        const itemListElement = document.getElementById('itemList');
         const cartItemsElement = document.getElementById('cartItems');
         const cartTotalElement = document.getElementById('cartTotal');
         const checkoutButton = document.getElementById('checkoutButton');
@@ -308,39 +308,39 @@
             displayShoppingPhasePocketMoney.textContent = formattedPocketMoney; 
         }
         
-        // --- 상품 렌더링 함수 (이미지 제거) ---
-        function renderGifts() {
-            let sortedGifts = [...giftsData]; 
+        // --- 물건 렌더링 함수 ---
+        function renderItems() {
+            let sortedItems = [...itemsData]; 
             if (currentSortCriterion === 'design') {
-                sortedGifts.sort((a, b) => b.design - a.design || a.price - b.price);
+                sortedItems.sort((a, b) => b.design - a.design || a.price - b.price);
             } else if (currentSortCriterion === 'practicality') {
-                sortedGifts.sort((a, b) => b.practicality - a.practicality || a.price - b.price);
+                sortedItems.sort((a, b) => b.practicality - a.practicality || a.price - b.price);
             } else { 
-                sortedGifts.sort((a, b) => (b.design + b.practicality) - (a.design + a.practicality) || a.price - b.price);
+                sortedItems.sort((a, b) => (b.design + b.practicality) - (a.design + a.practicality) || a.price - b.price);
             }
 
-            giftListElement.innerHTML = ''; 
-            sortedGifts.forEach(gift => {
+            itemListElement.innerHTML = ''; 
+            sortedItems.forEach(item => {
                 const card = `
                     <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
                         <div class="p-4 flex flex-col flex-grow">
-                            <h3 class="text-lg font-semibold mb-2 text-gray-800">${gift.name}</h3>
-                            <p class="text-indigo-600 font-bold text-xl mb-2">${gift.price.toLocaleString()}원</p>
+                            <h3 class="text-lg font-semibold mb-2 text-gray-800">${item.name}</h3>
+                            <p class="text-indigo-600 font-bold text-xl mb-2">${item.price.toLocaleString()}원</p>
                             <div class="text-sm text-gray-600 mb-1">
                                 <span>디자인:</span>
-                                <span class="font-medium">${'⭐'.repeat(gift.design)}${'☆'.repeat(5-gift.design)} (${gift.design}/5)</span>
+                                <span class="font-medium">${'⭐'.repeat(item.design)}${'☆'.repeat(5-item.design)} (${item.design}/5)</span>
                             </div>
                             <div class="text-sm text-gray-600 mb-3">
                                 <span>실용성:</span>
-                                <span class="font-medium">${'🌟'.repeat(gift.practicality)}${'☆'.repeat(5-gift.practicality)} (${gift.practicality}/5)</span>
+                                <span class="font-medium">${'🌟'.repeat(item.practicality)}${'☆'.repeat(5-item.practicality)} (${item.practicality}/5)</span>
                             </div>
-                            <button data-id="${gift.id}" class="add-to-cart-btn mt-auto w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 rounded-md transition-colors text-sm">
+                            <button data-id="${item.id}" class="add-to-cart-btn mt-auto w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-3 rounded-md transition-colors text-sm">
                                 장바구니에 추가
                             </button>
                         </div>
                     </div>
                 `;
-                giftListElement.insertAdjacentHTML('beforeend', card);
+                itemListElement.insertAdjacentHTML('beforeend', card);
             });
             document.querySelectorAll('.add-to-cart-btn').forEach(button => {
                 button.addEventListener('click', () => addToCart(parseInt(button.dataset.id)));
@@ -381,24 +381,24 @@
             cartTotalElement.textContent = `${total.toLocaleString()}원`;
         }
 
-        // --- 장바구니에 상품 추가 함수 ---
-        function addToCart(giftId) {
-            const gift = giftsData.find(g => g.id === giftId);
-            if (!gift) return;
+        // --- 장바구니에 물건 추가 함수 ---
+        function addToCart(itemId) {
+            const item = itemsData.find(i => i.id === itemId);
+            if (!item) return;
 
-            const existingItem = cart.find(item => item.id === giftId);
+            const existingItem = cart.find(cartItem => cartItem.id === itemId);
             if (existingItem) {
                 existingItem.quantity++;
             } else {
-                cart.push({ ...gift, quantity: 1 });
+                cart.push({ ...item, quantity: 1 });
             }
-            showAlert(`${gift.name} 상품을 장바구니에 추가했습니다.`, 'success');
+            showAlert(`${item.name} 상품을 장바구니에 추가했습니다.`, 'success');
             renderCart();
         }
         
-        // --- 장바구니에서 상품 제거 함수 ---
-        function removeFromCart(giftId) {
-            const itemIndex = cart.findIndex(item => item.id === giftId);
+        // --- 장바구니에서 물건 제거 함수 ---
+        function removeFromCart(itemId) {
+            const itemIndex = cart.findIndex(item => item.id === itemId);
             if (itemIndex > -1) {
                 const item = cart[itemIndex];
                 showAlert(`${item.name} 상품을 장바구니에서 삭제했습니다.`, 'success'); 
@@ -513,7 +513,6 @@
             if (balancedButton) {
                 balancedButton.classList.add('priority-selected');
             }
-            // showAlert("모든 내용이 초기화되었습니다. 처음부터 다시 시작하세요!", "info"); // DOMContentLoaded에서 호출 시 메시지 안 뜨게
             window.scrollTo(0, 0); 
         }
 
@@ -612,7 +611,7 @@
             shoppingPhaseDiv.style.display = 'block';
             reasonPhaseDiv.style.display = 'none'; 
             finalSummaryPhaseDiv.style.display = 'none';
-            renderGifts();
+            renderItems();
             renderCart();
         });
         
@@ -623,7 +622,7 @@
                     btn.classList.remove('priority-selected');
                 });
                 event.target.classList.add('priority-selected');
-                renderGifts();
+                renderItems();
             }
         });
 
@@ -637,7 +636,6 @@
         // --- 초기화 ---
         document.addEventListener('DOMContentLoaded', () => {
             resetApplication(); 
-             // DOMContentLoaded에서만 특별히 초기 메시지 표시
             showAlert("환영합니다! 사고 싶은 것을 적고 용돈을 뽑아보세요.", "info", 4000);
         });
     </script>
